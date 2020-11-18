@@ -1,0 +1,13 @@
+spring:
+  cloud:
+    stream:
+      rabbit:
+        bindings:
+          producer-out-0:
+            producer:
+              exchangeType: fanout
+      bindings:
+        producer-out-0:
+          destination: test
+  application:
+    name: producer-service
