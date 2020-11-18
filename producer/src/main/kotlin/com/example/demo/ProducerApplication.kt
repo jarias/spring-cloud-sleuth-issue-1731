@@ -8,8 +8,8 @@ import org.springframework.context.annotation.Configuration
 import org.springframework.web.reactive.function.server.ServerResponse
 import org.springframework.web.reactive.function.server.buildAndAwait
 import org.springframework.web.reactive.function.server.coRouter
+import reactor.core.publisher.EmitterProcessor
 import reactor.core.publisher.Flux
-import reactor.core.publisher.Sinks
 import java.util.function.Supplier
 
 private val logger = KotlinLogging.logger {}
@@ -24,20 +24,20 @@ fun main(args: Array<String>) {
 @Configuration
 class TestConfig {
     @Bean
-    fun sink(): Sinks.Many<String> {
-        return Sinks.many().multicast().onBackpressureBuffer()
+    fun sink(): EmitterProcessor<String> {
+        return EmitterProcessor.create()
     }
 
     @Bean
     fun producer(): Supplier<Flux<String>> {
-        return Supplier { sink().asFlux() }
+        return Supplier { sink() }
     }
 
     @Bean
     fun router() = coRouter {
         POST("/") {
             logger.info { "Sending message" }
-            sink().tryEmitNext("Hello world")
+            sink().onNext("Hello world")
             ServerResponse.noContent().buildAndAwait()
         }
     }
