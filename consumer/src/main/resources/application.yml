@@ -8,7 +8,6 @@ spring:
               exchangeType: fanout
       bindings:
         consumer-in-0:
-          group: test
           destination: test
   application:
     name: consumer-service

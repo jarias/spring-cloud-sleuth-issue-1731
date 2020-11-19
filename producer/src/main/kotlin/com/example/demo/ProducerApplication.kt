@@ -1,10 +1,14 @@
 package com.example.demo
 
 import mu.KotlinLogging
+import org.springframework.beans.factory.BeanFactory
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.runApplication
+import org.springframework.cloud.sleuth.instrument.messaging.MessagingSleuthOperators
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.messaging.Message
+import org.springframework.messaging.support.MessageBuilder
 import org.springframework.web.reactive.function.server.ServerResponse
 import org.springframework.web.reactive.function.server.buildAndAwait
 import org.springframework.web.reactive.function.server.coRouter
@@ -24,20 +28,21 @@ fun main(args: Array<String>) {
 @Configuration
 class TestConfig {
     @Bean
-    fun sink(): EmitterProcessor<String> {
+    fun sink(): EmitterProcessor<Message<String>> {
         return EmitterProcessor.create()
     }
 
     @Bean
-    fun producer(): Supplier<Flux<String>> {
+    fun producer(): Supplier<Flux<Message<String>>> {
         return Supplier { sink() }
     }
 
     @Bean
-    fun router() = coRouter {
+    fun router(beanFactory: BeanFactory) = coRouter {
         POST("/") {
             logger.info { "Sending message" }
-            sink().onNext("Hello world")
+            val message = MessageBuilder.withPayload("Hello World").build()
+            sink().onNext(MessagingSleuthOperators.handleOutputMessage(beanFactory, MessagingSleuthOperators.forInputMessage(beanFactory, message)))
             ServerResponse.noContent().buildAndAwait()
         }
     }
